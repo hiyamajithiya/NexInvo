@@ -8,6 +8,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
+      <main>
         <div className="px-4 py-6 sm:px-0">
           <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
             <div className="text-center">
