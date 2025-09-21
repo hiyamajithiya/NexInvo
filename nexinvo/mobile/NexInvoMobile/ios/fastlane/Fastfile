@@ -1,0 +1,295 @@
+# iOS Fastlane Configuration for NexInvo Mobile App
+
+default_platform(:ios)
+
+platform :ios do
+  # Variables
+  app_identifier = "com.nexinvo.mobile"
+  workspace = "NexInvoMobile.xcworkspace"
+  scheme = "NexInvoMobile"
+  ipa_name = "NexInvoMobile"
+
+  # Before all lanes
+  before_all do
+    # Ensure git status is clean
+    ensure_git_status_clean
+
+    # Install CocoaPods dependencies
+    cocoapods(
+      clean_install: true,
+      podfile: "./Podfile"
+    )
+
+    # Set build number to current timestamp for uniqueness
+    increment_build_number(
+      xcodeproj: "NexInvoMobile.xcodeproj",
+      build_number: Time.now.to_i.to_s
+    )
+  end
+
+  # Development builds
+  desc "Build development version"
+  lane :dev do
+    # Update development provisioning profiles
+    match(
+      type: "development",
+      app_identifier: "#{app_identifier}.dev",
+      readonly: true
+    )
+
+    # Build the app
+    build_app(
+      workspace: workspace,
+      scheme: "#{scheme}Dev",
+      configuration: "Debug",
+      output_directory: "./build",
+      output_name: "#{ipa_name}-dev.ipa",
+      clean: true,
+      export_method: "development"
+    )
+
+    # Install on connected devices
+    install_on_device(
+      skip_wifi: true,
+      ipa: "./build/#{ipa_name}-dev.ipa"
+    )
+  end
+
+  # Staging builds for internal testing
+  desc "Build and deploy to TestFlight (Staging)"
+  lane :staging do
+    # Update App Store Connect API key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_FILEPATH"]
+    )
+
+    # Update staging provisioning profiles
+    match(
+      type: "appstore",
+      app_identifier: "#{app_identifier}.staging",
+      readonly: true
+    )
+
+    # Build the app
+    build_app(
+      workspace: workspace,
+      scheme: "#{scheme}Staging",
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "#{ipa_name}-staging.ipa",
+      clean: true,
+      export_method: "app-store"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      ipa: "./build/#{ipa_name}-staging.ipa",
+      app_identifier: "#{app_identifier}.staging",
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      groups: ["Internal Testing"],
+      changelog: "Staging build for internal testing"
+    )
+
+    # Notify team
+    slack(
+      message: "✅ Staging build uploaded to TestFlight",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Production builds
+  desc "Build and deploy to TestFlight (Production)"
+  lane :beta do
+    # Update App Store Connect API key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_FILEPATH"]
+    )
+
+    # Update production provisioning profiles
+    match(
+      type: "appstore",
+      app_identifier: app_identifier,
+      readonly: true
+    )
+
+    # Run tests before building
+    run_tests(
+      workspace: workspace,
+      scheme: scheme,
+      device: "iPhone 14",
+      clean: true
+    )
+
+    # Build the app
+    build_app(
+      workspace: workspace,
+      scheme: scheme,
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "#{ipa_name}.ipa",
+      clean: true,
+      export_method: "app-store",
+      include_bitcode: false
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      ipa: "./build/#{ipa_name}.ipa",
+      app_identifier: app_identifier,
+      skip_waiting_for_build_processing: false,
+      distribute_external: true,
+      groups: ["Beta Testers"],
+      beta_app_description: "NexInvo Mobile - Invoice Management App",
+      beta_app_feedback_email: "feedback@nexinvo.com",
+      notify_external_testers: true,
+      changelog: File.read("../CHANGELOG.md").split("\n")[0..10].join("\n")
+    )
+
+    # Create GitHub release
+    github_release = set_github_release(
+      repository_name: "nexinvo/mobile-app",
+      api_token: ENV["GITHUB_TOKEN"],
+      name: "v#{get_version_number(xcodeproj: 'NexInvoMobile.xcodeproj')}",
+      tag_name: "v#{get_version_number(xcodeproj: 'NexInvoMobile.xcodeproj')}",
+      description: File.read("../CHANGELOG.md").split("\n")[0..20].join("\n"),
+      commitish: "main"
+    )
+
+    # Notify team
+    slack(
+      message: "🚀 Production build uploaded to TestFlight\n📱 Version: #{get_version_number}\n🔗 GitHub: #{github_release['html_url']}",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Release to App Store
+  desc "Deploy to App Store"
+  lane :release do
+    # Update App Store Connect API key
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_FILEPATH"]
+    )
+
+    # Check if latest TestFlight build is ready for release
+    latest_testflight_build_number(
+      app_identifier: app_identifier,
+      api_key_path: ENV["ASC_KEY_FILEPATH"]
+    )
+
+    # Submit for review
+    deliver(
+      app_identifier: app_identifier,
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: false,
+      submission_information: {
+        add_id_info_limits_tracking: true,
+        add_id_info_serves_ads: false,
+        add_id_info_tracks_action: true,
+        add_id_info_tracks_install: true,
+        add_id_info_uses_idfa: false,
+        content_rights_has_rights: true,
+        content_rights_contains_third_party_content: false,
+        export_compliance_platform: 'ios',
+        export_compliance_compliance_required: false,
+        export_compliance_encryption_updated: false,
+        export_compliance_app_type: nil,
+        export_compliance_uses_encryption: false,
+        export_compliance_is_exempt: true,
+        export_compliance_contains_third_party_cryptography: false,
+        export_compliance_contains_proprietary_cryptography: false,
+        export_compliance_available_on_french_store: true
+      }
+    )
+
+    # Notify team
+    slack(
+      message: "🎉 App submitted to App Store for review!\n📱 Version: #{get_version_number}",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Certificate and profile management
+  desc "Update certificates and provisioning profiles"
+  lane :certificates do
+    match(
+      type: "development",
+      app_identifier: [app_identifier, "#{app_identifier}.dev", "#{app_identifier}.staging"]
+    )
+
+    match(
+      type: "appstore",
+      app_identifier: [app_identifier, "#{app_identifier}.staging"]
+    )
+  end
+
+  # Clean up
+  desc "Clean build artifacts"
+  lane :clean do
+    clear_derived_data
+    clean_build_artifacts
+
+    # Remove old builds
+    sh("rm -rf ../build/*")
+  end
+
+  # Setup for new machine
+  desc "Setup development environment"
+  lane :setup do
+    # Install dependencies
+    cocoapods
+
+    # Setup certificates
+    certificates
+
+    # Create necessary directories
+    sh("mkdir -p ../build")
+    sh("mkdir -p ./screenshots")
+    sh("mkdir -p ./metadata")
+  end
+
+  # Error handling
+  error do |lane, exception|
+    slack(
+      message: "❌ iOS build failed in lane: #{lane}\nError: #{exception.message}",
+      channel: "#mobile-alerts",
+      success: false
+    ) if ENV["SLACK_URL"]
+  end
+
+  # After all lanes
+  after_all do |lane|
+    # Clean up
+    clean_build_artifacts
+
+    # Reset git changes made by fastlane
+    reset_git_repo(
+      skip_clean: true,
+      disregard_gitignore: false
+    )
+  end
+end
+
+# Helper methods
+def get_version_number
+  get_version_number(xcodeproj: "NexInvoMobile.xcodeproj")
+end
+
+def get_build_number
+  get_build_number(xcodeproj: "NexInvoMobile.xcodeproj")
+end

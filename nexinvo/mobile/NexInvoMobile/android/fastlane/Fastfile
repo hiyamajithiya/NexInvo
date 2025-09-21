@@ -1,0 +1,379 @@
+# Android Fastlane Configuration for NexInvo Mobile App
+
+default_platform(:android)
+
+platform :android do
+  # Variables
+  package_name = "com.nexinvo.mobile"
+  json_key_file = ENV["GOOGLE_PLAY_JSON_KEY_FILE"]
+  apk_path = "./app/build/outputs/apk/release/app-release.apk"
+  aab_path = "./app/build/outputs/bundle/release/app-release.aab"
+
+  # Before all lanes
+  before_all do
+    # Ensure git status is clean
+    ensure_git_status_clean
+
+    # Clean previous builds
+    gradle(task: "clean")
+  end
+
+  # Development builds
+  desc "Build development APK"
+  lane :dev do
+    gradle(
+      task: "assemble",
+      build_type: "debug",
+      flavor: "dev",
+      properties: {
+        "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
+
+    # Install on connected device
+    adb(command: "install -r ./app/build/outputs/apk/dev/debug/app-dev-debug.apk")
+
+    UI.success("🚀 Development APK installed on device")
+  end
+
+  # Staging builds for internal testing
+  desc "Build and deploy to Google Play Internal Testing (Staging)"
+  lane :staging do
+    # Build staging AAB
+    gradle(
+      task: "bundle",
+      build_type: "release",
+      flavor: "staging",
+      properties: {
+        "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
+
+    # Upload to Google Play Internal Testing
+    upload_to_play_store(
+      package_name: "#{package_name}.staging",
+      json_key: json_key_file,
+      aab: "./app/build/outputs/bundle/stagingRelease/app-staging-release.aab",
+      track: "internal",
+      release_status: "completed",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    # Notify team
+    slack(
+      message: "✅ Staging build uploaded to Google Play Internal Testing",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Beta builds for external testing
+  desc "Build and deploy to Google Play Beta Testing"
+  lane :beta do
+    # Run tests
+    gradle(task: "test")
+
+    # Build production AAB
+    gradle(
+      task: "bundle",
+      build_type: "release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
+
+    # Upload to Google Play Beta
+    upload_to_play_store(
+      package_name: package_name,
+      json_key: json_key_file,
+      aab: aab_path,
+      track: "beta",
+      release_status: "completed",
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      metadata_path: "./fastlane/metadata/android"
+    )
+
+    # Create GitHub release
+    version_name = android_get_version_name
+    version_code = android_get_version_code
+
+    github_release = set_github_release(
+      repository_name: "nexinvo/mobile-app",
+      api_token: ENV["GITHUB_TOKEN"],
+      name: "v#{version_name}",
+      tag_name: "v#{version_name}",
+      description: File.read("../CHANGELOG.md").split("\n")[0..20].join("\n"),
+      commitish: "main"
+    )
+
+    # Notify team
+    slack(
+      message: "🚀 Beta build uploaded to Google Play\n📱 Version: #{version_name} (#{version_code})\n🔗 GitHub: #{github_release['html_url']}",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Production release
+  desc "Deploy to Google Play Store"
+  lane :release do
+    # Verify the beta build is ready
+    version_name = android_get_version_name
+
+    # Promote from beta to production
+    upload_to_play_store(
+      package_name: package_name,
+      json_key: json_key_file,
+      track: "beta",
+      track_promote_to: "production",
+      release_status: "completed",
+      rollout: "0.1", # Start with 10% rollout
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    # Notify team
+    slack(
+      message: "🎉 App released to Google Play Store (10% rollout)!\n📱 Version: #{version_name}",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Increase rollout percentage
+  desc "Increase rollout percentage"
+  lane :rollout do |options|
+    percentage = options[:percentage] || "1.0"
+
+    upload_to_play_store(
+      package_name: package_name,
+      json_key: json_key_file,
+      track: "production",
+      rollout: percentage,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_aab: true
+    )
+
+    rollout_percent = (percentage.to_f * 100).to_i
+    slack(
+      message: "📈 Rollout increased to #{rollout_percent}%",
+      channel: "#mobile-releases",
+      success: true
+    ) if ENV["SLACK_URL"]
+  end
+
+  # Build APK for testing
+  desc "Build release APK"
+  lane :apk do
+    gradle(
+      task: "assemble",
+      build_type: "release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
+
+    # Copy APK to build directory
+    sh("mkdir -p ../build")
+    sh("cp ./app/build/outputs/apk/release/app-release.apk ../build/")
+
+    UI.success("📦 Release APK built successfully")
+  end
+
+  # Build AAB for Play Store
+  desc "Build release AAB"
+  lane :aab do
+    gradle(
+      task: "bundle",
+      build_type: "release",
+      properties: {
+        "android.injected.signing.store.file" => ENV["ANDROID_KEYSTORE_FILE"],
+        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
+        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
+        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"]
+      }
+    )
+
+    # Copy AAB to build directory
+    sh("mkdir -p ../build")
+    sh("cp ./app/build/outputs/bundle/release/app-release.aab ../build/")
+
+    UI.success("📦 Release AAB built successfully")
+  end
+
+  # Run tests
+  desc "Run all tests"
+  lane :test do
+    gradle(task: "test")
+    gradle(task: "connectedAndroidTest")
+  end
+
+  # Generate keystore
+  desc "Generate release keystore"
+  lane :generate_keystore do
+    keystore_path = "./app/nexinvo-release.keystore"
+
+    sh("keytool -genkey -v -keystore #{keystore_path} -alias nexinvo-release -keyalg RSA -keysize 2048 -validity 10000 -storepass #{ENV['ANDROID_KEYSTORE_PASSWORD']} -keypass #{ENV['ANDROID_KEY_PASSWORD']} -dname 'CN=NexInvo, OU=Mobile, O=NexInvo, L=City, ST=State, C=IN'")
+
+    UI.success("🔑 Keystore generated at #{keystore_path}")
+  end
+
+  # Update version
+  desc "Update version name and code"
+  lane :update_version do |options|
+    version_name = options[:version_name]
+    version_code = options[:version_code]
+
+    if version_name
+      android_set_version_name(version_name: version_name)
+    end
+
+    if version_code
+      android_set_version_code(version_code: version_code.to_i)
+    end
+
+    UI.success("📱 Version updated: #{android_get_version_name} (#{android_get_version_code})")
+  end
+
+  # Clean builds
+  desc "Clean build artifacts"
+  lane :clean do
+    gradle(task: "clean")
+    sh("rm -rf ../build/*")
+  end
+
+  # Setup for new machine
+  desc "Setup development environment"
+  lane :setup do
+    # Create necessary directories
+    sh("mkdir -p ../build")
+    sh("mkdir -p ./fastlane/metadata/android")
+
+    # Generate keystore if it doesn't exist
+    generate_keystore unless File.exist?("./app/nexinvo-release.keystore")
+
+    UI.success("🛠️  Android development environment setup complete")
+  end
+
+  # Metadata management
+  desc "Download metadata from Google Play"
+  lane :download_metadata do
+    download_from_play_store(
+      package_name: package_name,
+      json_key: json_key_file,
+      metadata_path: "./fastlane/metadata/android"
+    )
+  end
+
+  desc "Upload metadata to Google Play"
+  lane :upload_metadata do
+    upload_to_play_store(
+      package_name: package_name,
+      json_key: json_key_file,
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      metadata_path: "./fastlane/metadata/android"
+    )
+  end
+
+  # Screenshots
+  desc "Capture screenshots"
+  lane :screenshots do
+    capture_android_screenshots(
+      locales: ["en-US", "hi-IN"],
+      clear_previous_screenshots: true,
+      app_package_name: package_name,
+      tests_package_name: "#{package_name}.test",
+      use_tests_in_packages: ["#{package_name}.screenshots"],
+      test_instrumentation_runner: "androidx.test.runner.AndroidJUnitRunner",
+      ending_locale: "en-US"
+    )
+  end
+
+  # Performance testing
+  desc "Run performance tests"
+  lane :performance do
+    gradle(task: "assembleRelease")
+
+    # Run performance tests using Firebase Test Lab
+    run_tests_firebase_testlab(
+      project_id: ENV["FIREBASE_PROJECT_ID"],
+      gcloud_service_key_file: ENV["GCLOUD_SERVICE_KEY_FILE"],
+      type: "robo",
+      devices: [
+        {
+          model: "Pixel2",
+          version: "28",
+          locale: "en",
+          orientation: "portrait"
+        },
+        {
+          model: "Pixel4",
+          version: "30",
+          locale: "en",
+          orientation: "portrait"
+        }
+      ],
+      app_apk: apk_path,
+      timeout: "15m",
+      results_bucket: "nexinvo-test-results"
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    slack(
+      message: "❌ Android build failed in lane: #{lane}\nError: #{exception.message}",
+      channel: "#mobile-alerts",
+      success: false
+    ) if ENV["SLACK_URL"]
+  end
+
+  # After all lanes
+  after_all do |lane|
+    # Clean up temporary files
+    gradle(task: "clean")
+  end
+end
+
+# Helper methods
+def android_get_version_name
+  File.read("./app/build.gradle").match(/versionName "(.+)"/)[1]
+end
+
+def android_get_version_code
+  File.read("./app/build.gradle").match(/versionCode (\d+)/)[1]
+end
+
+def android_set_version_name(version_name:)
+  gradle_file = File.read("./app/build.gradle")
+  gradle_file.gsub!(/versionName ".+"/, "versionName \"#{version_name}\"")
+  File.write("./app/build.gradle", gradle_file)
+end
+
+def android_set_version_code(version_code:)
+  gradle_file = File.read("./app/build.gradle")
+  gradle_file.gsub!(/versionCode \d+/, "versionCode #{version_code}")
+  File.write("./app/build.gradle", gradle_file)
+end

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.number }} - {{ tenant.name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3B82F6;
+            padding-bottom: 20px;
+        }
+
+        .company-info h1 {
+            color: #3B82F6;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            margin: 2px 0;
+            color: #666;
+        }
+
+        .invoice-meta {
+            text-align: right;
+        }
+
+        .invoice-meta h2 {
+            color: #3B82F6;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .invoice-meta p {
+            margin: 3px 0;
+        }
+
+        .billing-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .billing-info {
+            width: 48%;
+        }
+
+        .billing-info h3 {
+            color: #3B82F6;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #E5E7EB;
+            padding-bottom: 5px;
+        }
+
+        .billing-info p {
+            margin: 3px 0;
+        }
+
+        .invoice-items {
+            margin-bottom: 30px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .items-table th,
+        .items-table td {
+            border: 1px solid #E5E7EB;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .items-table th {
+            background-color: #F3F4F6;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .items-table td.number {
+            text-align: right;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        .totals-table {
+            width: 300px;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .totals-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .totals-table td:last-child {
+            text-align: right;
+        }
+
+        .totals-table .total-row {
+            background-color: #3B82F6;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .payment-section {
+            position: relative;
+            background-color: #F9FAFB;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .payment-section h3 {
+            color: #3B82F6;
+            margin-bottom: 15px;
+        }
+
+        .payment-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .payment-info {
+            flex: 1;
+        }
+
+        .payment-info p {
+            margin: 5px 0;
+        }
+
+        /* QR Code Styles */
+        .qr-container {
+            position: relative;
+            text-align: center;
+        }
+
+        .qr-container.payment-section {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .qr-container.footer-center {
+            margin-top: 20px;
+        }
+
+        .qr-container.sidebar {
+            position: absolute;
+            right: -150px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .qr-container.bottom-right {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .qr-code-image {
+            display: block;
+            margin: 0 auto 10px;
+            border-radius: 4px;
+        }
+
+        .qr-instructions {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .qr-instructions p {
+            margin: 2px 0;
+        }
+
+        .qr-amount {
+            font-weight: bold;
+            color: #3B82F6;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+
+        .qr-reference {
+            font-size: 10px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            text-align: center;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .gst-info {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .terms-conditions {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .terms-conditions h4 {
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .terms-conditions ul {
+            padding-left: 20px;
+        }
+
+        .terms-conditions li {
+            margin: 3px 0;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            .invoice-container {
+                max-width: none;
+                margin: 0;
+                padding: 10px;
+            }
+
+            .qr-container.sidebar {
+                right: -100px;
+            }
+        }
+
+        /* Responsive Styles */
+        @media screen and (max-width: 600px) {
+            .invoice-header,
+            .billing-section,
+            .payment-details {
+                flex-direction: column;
+            }
+
+            .billing-info {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .qr-container.payment-section {
+                position: relative;
+                right: auto;
+                top: auto;
+                margin-top: 15px;
+            }
+
+            .qr-container.sidebar {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Invoice Header -->
+        <div class="invoice-header">
+            <div class="company-info">
+                <h1>{{ tenant.name }}</h1>
+                <p>{{ company_details.address.street|default:"" }}</p>
+                <p>{{ company_details.address.city|default:"" }}, {{ company_details.address.state|default:"" }} {{ company_details.address.pincode|default:"" }}</p>
+                {% if company_details.gstin %}
+                <p><strong>GSTIN:</strong> {{ company_details.gstin }}</p>
+                {% endif %}
+                {% if company_details.phone %}
+                <p><strong>Phone:</strong> {{ company_details.phone }}</p>
+                {% endif %}
+                {% if company_details.email %}
+                <p><strong>Email:</strong> {{ company_details.email }}</p>
+                {% endif %}
+            </div>
+            <div class="invoice-meta">
+                <h2>INVOICE</h2>
+                <p><strong>Invoice #:</strong> {{ invoice.number }}</p>
+                <p><strong>Date:</strong> {{ invoice.date|date:"d M Y" }}</p>
+                {% if invoice.due_date %}
+                <p><strong>Due Date:</strong> {{ invoice.due_date|date:"d M Y" }}</p>
+                {% endif %}
+                <p><strong>Status:</strong> {{ invoice.get_status_display }}</p>
+            </div>
+        </div>
+
+        <!-- Billing Information -->
+        <div class="billing-section">
+            <div class="billing-info">
+                <h3>Bill To:</h3>
+                <p><strong>{{ client.name }}</strong></p>
+                {% if client.company_name %}
+                <p>{{ client.company_name }}</p>
+                {% endif %}
+                {% if client.billing_address %}
+                <p>{{ client.billing_address.street|default:"" }}</p>
+                <p>{{ client.billing_address.city|default:"" }}, {{ client.billing_address.state|default:"" }} {{ client.billing_address.postal_code|default:"" }}</p>
+                {% endif %}
+                {% if client.gstin %}
+                <p><strong>GSTIN:</strong> {{ client.gstin }}</p>
+                {% endif %}
+                {% if client.phone %}
+                <p><strong>Phone:</strong> {{ client.phone }}</p>
+                {% endif %}
+                {% if client.email %}
+                <p><strong>Email:</strong> {{ client.email }}</p>
+                {% endif %}
+            </div>
+            <div class="billing-info">
+                <h3>Ship To:</h3>
+                {% if client.shipping_address and client.shipping_address != client.billing_address %}
+                <p>{{ client.shipping_address.street|default:"" }}</p>
+                <p>{{ client.shipping_address.city|default:"" }}, {{ client.shipping_address.state|default:"" }} {{ client.shipping_address.postal_code|default:"" }}</p>
+                {% else %}
+                <p><em>Same as billing address</em></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Invoice Items -->
+        <div class="invoice-items">
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Description</th>
+                        <th>HSN/SAC</th>
+                        <th>Qty</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                        <th>Tax Rate</th>
+                        <th>Tax Amount</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in invoice_lines %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ line.description }}</td>
+                        <td>{{ line.hsn_sac|default:"-" }}</td>
+                        <td class="number">{{ line.quantity }}</td>
+                        <td class="number">₹{{ line.rate|floatformat:2 }}</td>
+                        <td class="number">₹{{ line.taxable_value|floatformat:2 }}</td>
+                        <td class="number">{{ line.cgst_rate|add:line.sgst_rate|add:line.igst_rate }}%</td>
+                        <td class="number">₹{{ line.cgst_amount|add:line.sgst_amount|add:line.igst_amount|floatformat:2 }}</td>
+                        <td class="number">₹{{ line.line_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals Section -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Subtotal:</td>
+                    <td>₹{{ invoice.taxable_amount|floatformat:2 }}</td>
+                </tr>
+                {% if invoice.cgst_amount %}
+                <tr>
+                    <td>CGST:</td>
+                    <td>₹{{ invoice.cgst_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if invoice.sgst_amount %}
+                <tr>
+                    <td>SGST:</td>
+                    <td>₹{{ invoice.sgst_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if invoice.igst_amount %}
+                <tr>
+                    <td>IGST:</td>
+                    <td>₹{{ invoice.igst_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if invoice.cess_amount %}
+                <tr>
+                    <td>Cess:</td>
+                    <td>₹{{ invoice.cess_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if invoice.round_off %}
+                <tr>
+                    <td>Round Off:</td>
+                    <td>₹{{ invoice.round_off|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td>Total Amount:</td>
+                    <td>₹{{ invoice.grand_total|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Payment Section with QR Code -->
+        <div class="payment-section">
+            <h3>Payment Information</h3>
+            <div class="payment-details">
+                <div class="payment-info">
+                    <p><strong>Amount Due:</strong> ₹{{ invoice.grand_total|floatformat:2 }}</p>
+                    {% if invoice.client.credit_terms_days %}
+                    <p><strong>Payment Terms:</strong> {{ invoice.client.credit_terms_days }} days</p>
+                    {% endif %}
+
+                    {% for instruction in payment_instructions %}
+                    <p>{{ instruction }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- QR Code Placement -->
+                {% if qr_data.config.qr_position == 'payment_section' %}
+                <div class="qr-container payment-section">
+                    <img src="data:image/png;base64,{{ qr_data.qr_image_base64 }}"
+                         alt="Payment QR Code"
+                         class="qr-code-image"
+                         width="{{ qr_data.config.qr_size.0 }}"
+                         height="{{ qr_data.config.qr_size.1 }}">
+                    {% if qr_data.config.show_instructions %}
+                    <div class="qr-instructions">
+                        <p><strong>Scan to Pay</strong></p>
+                        <div class="qr-amount">₹{{ qr_data.payment_amount|floatformat:2 }}</div>
+                        <div class="qr-reference">Ref: {{ qr_data.transaction_reference }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- QR Code in other positions -->
+        {% if qr_data.config.qr_position == 'footer_center' %}
+        <div class="qr-container footer-center">
+            <img src="data:image/png;base64,{{ qr_data.qr_image_base64 }}"
+                 alt="Payment QR Code"
+                 class="qr-code-image"
+                 width="{{ qr_data.config.qr_size.0 }}"
+                 height="{{ qr_data.config.qr_size.1 }}">
+            {% if qr_data.config.show_instructions %}
+            <div class="qr-instructions">
+                <p><strong>Scan to Pay ₹{{ qr_data.payment_amount|floatformat:2 }}</strong></p>
+                <div class="qr-reference">Ref: {{ qr_data.transaction_reference }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if qr_data.config.qr_position == 'sidebar' %}
+        <div class="qr-container sidebar">
+            <img src="data:image/png;base64,{{ qr_data.qr_image_base64 }}"
+                 alt="Payment QR Code"
+                 class="qr-code-image"
+                 width="{{ qr_data.config.qr_size.0 }}"
+                 height="{{ qr_data.config.qr_size.1 }}">
+            {% if qr_data.config.show_instructions %}
+            <div class="qr-instructions">
+                <p><strong>Scan to Pay</strong></p>
+                <div class="qr-amount">₹{{ qr_data.payment_amount|floatformat:2 }}</div>
+                <div class="qr-reference">{{ qr_data.transaction_reference }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if qr_data.config.qr_position == 'bottom_right' %}
+        <div class="qr-container bottom-right">
+            <img src="data:image/png;base64,{{ qr_data.qr_image_base64 }}"
+                 alt="Payment QR Code"
+                 class="qr-code-image"
+                 width="{{ qr_data.config.qr_size.0 }}"
+                 height="{{ qr_data.config.qr_size.1 }}">
+            {% if qr_data.config.show_instructions %}
+            <div class="qr-instructions">
+                <p>Scan to Pay</p>
+                <div class="qr-reference">{{ qr_data.transaction_reference }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- GST Information -->
+        {% if company_details.gstin %}
+        <div class="gst-info">
+            <p><strong>Tax Information:</strong></p>
+            <p>This is a GST compliant invoice generated as per GST Rules.</p>
+            <p>GSTIN: {{ company_details.gstin }}</p>
+            {% if invoice.place_of_supply %}
+            <p>Place of Supply: {{ invoice.place_of_supply }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Terms and Conditions -->
+        <div class="terms-conditions">
+            <h4>Terms & Conditions:</h4>
+            <ul>
+                <li>Payment is due within {{ invoice.client.credit_terms_days|default:"30" }} days of invoice date.</li>
+                <li>Late payment charges may apply as per company policy.</li>
+                <li>All disputes are subject to {{ company_details.address.city|default:"local" }} jurisdiction.</li>
+                <li>Goods once sold are not returnable except for quality issues.</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is a computer-generated invoice and does not require a physical signature.</p>
+            <p>Generated on {{ generation_date|date:"d M Y, H:i" }} | {{ tenant.name }}</p>
+            {% if qr_data.expiry_time %}
+            <p>QR Code valid until: {{ qr_data.expiry_time|date:"d M Y, H:i" }}</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

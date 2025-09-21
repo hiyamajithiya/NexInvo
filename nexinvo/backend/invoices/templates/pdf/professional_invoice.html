@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ invoice.number }} - Professional Invoice</title>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header Section -->
+        <header class="invoice-header">
+            <div class="company-info">
+                <h1 class="company-name">{{ supplier.name }}</h1>
+                <div class="company-details">
+                    <p><strong>GSTIN:</strong> {{ supplier.gstin }}</p>
+                    <div class="address">{{ supplier.address }}</div>
+                    <p><strong>Phone:</strong> {{ supplier.phone }} | <strong>Email:</strong> {{ supplier.email }}</p>
+                </div>
+            </div>
+            <div class="invoice-info">
+                <h2 class="invoice-title">INVOICE</h2>
+                <div class="invoice-details">
+                    <p><span class="label">Invoice No:</span> <span class="value">{{ invoice.number }}</span></p>
+                    <p><span class="label">Date:</span> <span class="value">{{ invoice.date }}</span></p>
+                    <p><span class="label">Due Date:</span> <span class="value">{{ invoice.due_date }}</span></p>
+                    <p><span class="label">Type:</span> <span class="value">{{ invoice.invoice_type }}</span></p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Billing Information -->
+        <section class="billing-section">
+            <div class="billing-row">
+                <div class="bill-to">
+                    <h3>Bill To:</h3>
+                    <div class="client-info">
+                        <p class="client-name"><strong>{{ client.name }}</strong></p>
+                        <p><strong>GSTIN:</strong> {{ client.gstin }}</p>
+                        <p><strong>State:</strong> {{ client.state_name }} ({{ client.state_code }})</p>
+                        <div class="address">{{ client.address }}</div>
+                        <p><strong>Contact:</strong> {{ client.phone }} | {{ client.email }}</p>
+                    </div>
+                </div>
+                <div class="supply-info">
+                    <h3>Supply Details:</h3>
+                    <p><strong>Place of Supply:</strong> {{ invoice.place_of_supply_name }} ({{ invoice.place_of_supply }})</p>
+                    <p><strong>Transaction Type:</strong> {{ is_intra_state|yesno:"Intra-State,Inter-State" }}</p>
+                    <p><strong>Reverse Charge:</strong> {{ invoice.reverse_charge|yesno:"Yes,No" }}</p>
+                    <p><strong>Currency:</strong> {{ invoice.currency }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Line Items Table -->
+        <section class="line-items-section">
+            <table class="line-items-table">
+                <thead>
+                    <tr>
+                        <th class="col-sno">S.No</th>
+                        <th class="col-description">Item Description</th>
+                        <th class="col-hsn">HSN/SAC</th>
+                        <th class="col-qty">Qty</th>
+                        <th class="col-rate">Rate</th>
+                        <th class="col-discount">Discount</th>
+                        <th class="col-taxable">Taxable Value</th>
+                        <th class="col-tax-rate">Tax Rate</th>
+                        <th class="col-tax-amount">Tax Amount</th>
+                        <th class="col-total">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                    <tr class="line-item">
+                        <td class="text-center">{{ line.line_number }}</td>
+                        <td>
+                            <div class="item-description">
+                                <strong>{{ line.item_name }}</strong>
+                                <br><small>{{ line.description }}</small>
+                            </div>
+                        </td>
+                        <td class="text-center">{{ line.hsn_sac }}</td>
+                        <td class="text-center">{{ line.quantity }} {{ line.uqc }}</td>
+                        <td class="text-right">{{ line.rate }}</td>
+                        <td class="text-right">
+                            {% if line.discount_percent > 0 %}
+                                {{ line.discount_percent }}%<br>
+                                <small>({{ line.discount_amount }})</small>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-right">{{ line.taxable_value }}</td>
+                        <td class="text-center">
+                            {% if is_intra_state %}
+                                CGST: {{ line.cgst_rate }}%<br>
+                                SGST: {{ line.sgst_rate }}%
+                            {% else %}
+                                IGST: {{ line.igst_rate }}%
+                            {% endif %}
+                            {% if line.cess_rate > 0 %}
+                                <br>CESS: {{ line.cess_rate }}%
+                            {% endif %}
+                        </td>
+                        <td class="text-right">
+                            {% if is_intra_state %}
+                                {{ line.cgst_amount }}<br>
+                                {{ line.sgst_amount }}
+                            {% else %}
+                                {{ line.igst_amount }}
+                            {% endif %}
+                            {% if line.cess_amount > 0 %}
+                                <br>{{ line.cess_amount }}
+                            {% endif %}
+                        </td>
+                        <td class="text-right font-bold">{{ line.line_total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Tax Summary Section -->
+        <section class="tax-summary-section">
+            <div class="summary-row">
+                <div class="tax-breakdown">
+                    <h3>Tax Summary</h3>
+                    <table class="tax-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Tax Rate</th>
+                                <th>Taxable Amount</th>
+                                {% if is_intra_state %}
+                                    <th>CGST</th>
+                                    <th>SGST</th>
+                                {% else %}
+                                    <th>IGST</th>
+                                {% endif %}
+                                {% if tax_summary.cess_total > 0 %}
+                                    <th>CESS</th>
+                                {% endif %}
+                                <th>Total Tax</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tax in tax_rate_summary %}
+                            <tr>
+                                <td class="text-center">{{ tax.rate }}%</td>
+                                <td class="text-right">{{ tax.taxable_amount }}</td>
+                                {% if is_intra_state %}
+                                    <td class="text-right">{{ tax.cgst_amount }}</td>
+                                    <td class="text-right">{{ tax.sgst_amount }}</td>
+                                {% else %}
+                                    <td class="text-right">{{ tax.igst_amount }}</td>
+                                {% endif %}
+                                {% if tax_summary.cess_total > 0 %}
+                                    <td class="text-right">{{ tax.cess_amount }}</td>
+                                {% endif %}
+                                <td class="text-right font-bold">{{ tax.total_tax }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="invoice-totals">
+                    <div class="totals-table">
+                        <div class="total-row">
+                            <span class="total-label">Subtotal:</span>
+                            <span class="total-value">{{ invoice.subtotal }}</span>
+                        </div>
+                        {% if invoice.discount_amount > 0 %}
+                        <div class="total-row">
+                            <span class="total-label">Discount:</span>
+                            <span class="total-value">- {{ invoice.discount_amount }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="total-row">
+                            <span class="total-label">Taxable Amount:</span>
+                            <span class="total-value">{{ invoice.taxable_amount }}</span>
+                        </div>
+                        {% if is_intra_state %}
+                            <div class="total-row">
+                                <span class="total-label">CGST:</span>
+                                <span class="total-value">{{ tax_summary.cgst_total }}</span>
+                            </div>
+                            <div class="total-row">
+                                <span class="total-label">SGST:</span>
+                                <span class="total-value">{{ tax_summary.sgst_total }}</span>
+                            </div>
+                        {% else %}
+                            <div class="total-row">
+                                <span class="total-label">IGST:</span>
+                                <span class="total-value">{{ tax_summary.igst_total }}</span>
+                            </div>
+                        {% endif %}
+                        {% if tax_summary.cess_total > 0 %}
+                        <div class="total-row">
+                            <span class="total-label">CESS:</span>
+                            <span class="total-value">{{ tax_summary.cess_total }}</span>
+                        </div>
+                        {% endif %}
+                        {% if invoice.round_off != 0 %}
+                        <div class="total-row">
+                            <span class="total-label">Round Off:</span>
+                            <span class="total-value">{{ invoice.round_off }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="total-row grand-total">
+                            <span class="total-label">Grand Total:</span>
+                            <span class="total-value">{{ invoice.grand_total }}</span>
+                        </div>
+                    </div>
+
+                    <div class="amount-in-words">
+                        <p><strong>Amount in Words:</strong></p>
+                        <p class="words-text">{{ total_in_words }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Section -->
+        <footer class="invoice-footer">
+            <div class="footer-content">
+                <div class="qr-section">
+                    <h4>GST QR Code</h4>
+                    <img src="{{ qr_code }}" alt="GST QR Code" class="qr-code-image">
+                    <p class="qr-note">Scan for invoice verification</p>
+                </div>
+
+                <div class="terms-section">
+                    <h4>Terms & Conditions</h4>
+                    <div class="terms-content">
+                        {{ invoice.terms_conditions }}
+                    </div>
+                </div>
+
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <p>For {{ supplier.name }}</p>
+                        <br><br><br>
+                        <p>Authorized Signatory</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-note">
+                <p><strong>Note:</strong> This is a computer generated invoice and does not require physical signature.</p>
+                <p class="generated-info">Generated on {{ generated_at }} | Invoice Status: {{ invoice.payment_status }}</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

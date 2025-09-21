@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Reminder - Invoice {{ invoice.number }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .email-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #ffc107;
+            margin-bottom: 30px;
+        }
+
+        .company-name {
+            color: #1B365D;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .reminder-title {
+            color: #ffc107;
+            font-size: 20px;
+            margin: 20px 0 10px 0;
+        }
+
+        .reminder-badge {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .invoice-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .invoice-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoice-details td {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .invoice-details td:first-child {
+            font-weight: bold;
+            color: #495057;
+            width: 40%;
+        }
+
+        .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e67e22;
+        }
+
+        .overdue {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-left: 4px solid #1B365D;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .contact-info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ffc107;
+            color: #333;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .button:hover {
+            background-color: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1 class="company-name">{{ supplier.name }}</h1>
+            <div class="reminder-badge">Payment Reminder</div>
+        </div>
+
+        <h2 class="reminder-title">Gentle Reminder - Invoice {{ invoice.number }}</h2>
+
+        <p>Dear {{ client.name }},</p>
+
+        <p>We hope this message finds you well. This is a gentle reminder that the payment for the following invoice is now due:</p>
+
+        <div class="invoice-details">
+            <table>
+                <tr>
+                    <td>Invoice Number:</td>
+                    <td><strong>{{ invoice.number }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Invoice Date:</td>
+                    <td>{{ invoice.date|date:"d F Y" }}</td>
+                </tr>
+                <tr>
+                    <td>Original Due Date:</td>
+                    <td><strong>{{ invoice.due_date|date:"d F Y" }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Days Overdue:</td>
+                    <td class="overdue">{{ days_overdue }} day{{ days_overdue|pluralize }}</td>
+                </tr>
+                <tr>
+                    <td>Amount Due:</td>
+                    <td class="amount">{{ invoice.currency }} {{ invoice.grand_total|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p>We understand that sometimes payments can be overlooked in the busy flow of business operations. If you have already made this payment, please disregard this reminder and accept our thanks.</p>
+
+        <p>If the payment is still pending, we would appreciate if you could arrange to settle this invoice at your earliest convenience.</p>
+
+        <div class="message">
+            <strong>Need Help?</strong><br>
+            If you have any questions about this invoice or need to discuss payment arrangements, please don't hesitate to reach out to us. We're here to help and work with you.
+        </div>
+
+        <div class="contact-info">
+            <h3>Contact Information</h3>
+            <p>
+                <strong>Email:</strong> {{ supplier.company_details.email }}<br>
+                <strong>Phone:</strong> {{ supplier.company_details.phone }}<br>
+                {% if supplier.company_details.website %}
+                <strong>Website:</strong> {{ supplier.company_details.website }}
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for your attention to this matter and for your continued business.</p>
+            <p>Best regards,<br><strong>{{ supplier.name }}</strong></p>
+            <p style="font-size: 12px; color: #999; margin-top: 20px;">
+                This is an automated reminder sent on {{ current_date|date:"d F Y" }}.
+                If you believe this reminder was sent in error, please contact us immediately.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
