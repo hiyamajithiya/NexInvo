@@ -7,9 +7,12 @@ export interface User {
   designation?: string;
   ca_registration_no?: string;
   is_ca_user: boolean;
+  is_superuser: boolean;
   two_factor_enabled: boolean;
   date_joined: string;
   last_login?: string;
+  role?: 'ca_owner' | 'admin' | 'finance_user' | 'viewer' | 'client_readonly';
+  permissions?: string[];
 }
 
 export interface LoginRequest {

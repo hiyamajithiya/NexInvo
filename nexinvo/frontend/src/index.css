@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 @layer base {
   :root {
@@ -14,6 +12,22 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* Primary colors */
+    --color-primary-50: #f0f7ff;
+    --color-primary-100: #e0efff;
+    --color-primary-200: #bae1ff;
+    --color-primary-300: #7cc8ff;
+    --color-primary-400: #36abff;
+    --color-primary-500: #0891b2;
+    --color-primary-600: #1B365D;
+    --color-primary-700: #2E5984;
+    --color-primary-800: #1e3a8a;
+    --color-primary-900: #1e3a8a;
+
+    /* Accent colors */
+    --color-accent-500: #D4AF37;
+    --color-accent-600: #B8941F;
   }
 
   body {
@@ -29,18 +43,50 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    background-color: var(--color-primary-600);
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-700);
   }
 
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    background-color: #e5e7eb;
+    color: #1f2937;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background-color: #d1d5db;
   }
 
   .input-field {
-    @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500;
+    display: block;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .input-field:focus {
+    border-color: var(--color-primary-500);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-md border border-gray-200;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
   }
+
 }

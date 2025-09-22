@@ -111,7 +111,7 @@ const InvoiceList: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -198,7 +198,7 @@ const InvoiceList: React.FC = () => {
                   <div className="ml-4 flex items-center space-x-2">
                     <button
                       onClick={() => window.location.href = `/invoices/${invoice.id}`}
-                      className="text-primary-600 hover:text-primary-700"
+                      className="text-blue-600 hover:text-blue-700"
                       title="View"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

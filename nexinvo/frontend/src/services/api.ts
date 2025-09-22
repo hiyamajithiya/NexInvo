@@ -1,6 +1,7 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 // Create axios instance
 export const api = axios.create({
@@ -88,4 +89,5 @@ api.interceptors.response.use(
 );
 
 export { TokenManager };
+export const apiClient = api;
 export default api;

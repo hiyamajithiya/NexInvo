@@ -161,7 +161,7 @@ const IntegrationHub: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -183,7 +183,7 @@ const IntegrationHub: React.FC = () => {
           onClick={() => setActiveTab('dashboard')}
           className={`px-4 py-2 font-medium text-sm ${
             activeTab === 'dashboard'
-              ? 'text-primary-600 border-b-2 border-primary-600'
+              ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -193,7 +193,7 @@ const IntegrationHub: React.FC = () => {
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2 font-medium text-sm ${
             activeTab === 'overview'
-              ? 'text-primary-600 border-b-2 border-primary-600'
+              ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -203,7 +203,7 @@ const IntegrationHub: React.FC = () => {
           onClick={() => setActiveTab('connected')}
           className={`px-4 py-2 font-medium text-sm ${
             activeTab === 'connected'
-              ? 'text-primary-600 border-b-2 border-primary-600'
+              ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -213,7 +213,7 @@ const IntegrationHub: React.FC = () => {
           onClick={() => setActiveTab('webhooks')}
           className={`px-4 py-2 font-medium text-sm ${
             activeTab === 'webhooks'
-              ? 'text-primary-600 border-b-2 border-primary-600'
+              ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -265,7 +265,7 @@ const IntegrationHub: React.FC = () => {
                       ? 'bg-green-100 text-green-700 hover:bg-green-200'
                       : card.status === 'coming_soon'
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      : 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                   disabled={card.status === 'coming_soon'}
                 >

@@ -10,7 +10,7 @@ import type {
 
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/auth/login/', credentials);
+    const response = await api.post<LoginResponse>('/v1/auth/login/', credentials);
     const { access, refresh, user } = response.data;
 
     TokenManager.setTokens(access, refresh);
@@ -39,7 +39,7 @@ export class AuthService {
   }
 
   static async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/auth/me/');
+    const response = await api.get<User>('/v1/auth/me/');
     return response.data;
   }
 

@@ -381,7 +381,7 @@ const IntegrationSettings: React.FC<IntegrationSettingsProps> = ({
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-screen overflow-y-auto">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
       </div>
@@ -419,7 +419,7 @@ const IntegrationSettings: React.FC<IntegrationSettingsProps> = ({
                 onClick={() => setActiveTab('general')}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
                   activeTab === 'general'
-                    ? 'bg-primary-100 text-primary-700'
+                    ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -429,7 +429,7 @@ const IntegrationSettings: React.FC<IntegrationSettingsProps> = ({
                 onClick={() => setActiveTab('configuration')}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
                   activeTab === 'configuration'
-                    ? 'bg-primary-100 text-primary-700'
+                    ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -439,7 +439,7 @@ const IntegrationSettings: React.FC<IntegrationSettingsProps> = ({
                 onClick={() => setActiveTab('sync')}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
                   activeTab === 'sync'
-                    ? 'bg-primary-100 text-primary-700'
+                    ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
