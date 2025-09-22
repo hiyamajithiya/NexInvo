@@ -35,6 +35,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
         token['is_ca_user'] = user.is_ca_user
+        token['is_superuser'] = user.is_superuser
 
         return token
 
@@ -51,6 +52,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'designation': self.user.designation,
             'ca_registration_no': self.user.ca_registration_no,
             'is_ca_user': self.user.is_ca_user,
+            'is_superuser': self.user.is_superuser,
             'two_factor_enabled': self.user.two_factor_enabled,
         }
 
