@@ -10,11 +10,66 @@ import type {
 
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/v1/auth/login/', credentials);
-    const { access, refresh, user } = response.data;
+    console.log('Starting login request...');
+    console.log('API Base URL:', api.defaults.baseURL);
+    console.log('Credentials email:', credentials.email);
 
-    TokenManager.setTokens(access, refresh);
-    return response.data;
+    try {
+      const endpoint = '/v1/auth/login/';
+      const fullUrl = `${api.defaults.baseURL}${endpoint}`;
+      console.log('Full URL:', fullUrl);
+
+      const response = await api.post<LoginResponse>(endpoint, credentials);
+
+      console.log('Login response received:', response);
+      console.log('Response data:', response.data);
+
+      if (!response.data) {
+        throw new Error('Empty response from server');
+      }
+
+      const { access, refresh, user } = response.data;
+
+      if (!access || !refresh) {
+        throw new Error('No tokens received from server');
+      }
+
+      console.log('Tokens received, storing...');
+      TokenManager.setTokens(access, refresh);
+      console.log('Tokens stored successfully');
+
+      return response.data;
+    } catch (error: any) {
+      console.error('=== AUTH SERVICE ERROR ===');
+      console.error('Full error object:', error);
+
+      if (error.code === 'ERR_NETWORK') {
+        console.error('Network error - cannot reach backend');
+        console.error('Check if backend is running at:', api.defaults.baseURL);
+      }
+
+      if (error.response) {
+        console.error('Response error:');
+        console.error('- Status:', error.response.status);
+        console.error('- Data:', error.response.data);
+        console.error('- Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request made but no response received');
+        console.error('- Request:', error.request);
+      } else {
+        console.error('Error setting up the request');
+        console.error('- Message:', error.message);
+      }
+
+      if (error.config) {
+        console.error('Request config:');
+        console.error('- URL:', error.config.url);
+        console.error('- Method:', error.config.method);
+        console.error('- Base URL:', error.config.baseURL);
+      }
+
+      throw error;
+    }
   }
 
   static async register(data: RegisterRequest): Promise<RegisterResponse> {

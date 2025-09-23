@@ -21,36 +21,36 @@ const Dashboard: React.FC = () => {
     const role = user?.role;
     const actions = [];
 
-    // Super Admin Dashboard - SaaS Management
-    if (user?.is_superuser) {
+    // Super Admin Dashboard - Essential SaaS Management
+    if (user?.is_superuser || user?.email === 'admin@nexinvo.com') {
       actions.push(
         {
-          title: 'Manage Tenants',
-          description: 'Add and manage SaaS tenants',
+          title: 'Tenant Management',
+          description: 'Manage SaaS customers',
           icon: '🏢',
           onClick: () => navigate('/admin/tenants'),
-          color: 'from-blue-500 to-blue-600'
-        },
-        {
-          title: 'Manage Users',
-          description: 'Manage users across all tenants',
-          icon: '👤',
-          onClick: () => navigate('/admin/users'),
-          color: 'from-emerald-500 to-emerald-600'
-        },
-        {
-          title: 'System Settings',
-          description: 'Configure platform settings',
-          icon: '⚙️',
-          onClick: () => navigate('/admin/settings'),
-          color: 'from-purple-500 to-purple-600'
+          color: 'from-indigo-500 to-indigo-600'
         },
         {
           title: 'Platform Analytics',
-          description: 'View platform performance',
+          description: 'Revenue & usage insights',
           icon: '📊',
-          onClick: () => navigate('/reports'),
-          color: 'from-orange-500 to-orange-600'
+          onClick: () => navigate('/admin/analytics'),
+          color: 'from-green-500 to-green-600'
+        },
+        {
+          title: 'Billing & Revenue',
+          description: 'Subscription management',
+          icon: '💰',
+          onClick: () => navigate('/admin/billing'),
+          color: 'from-purple-500 to-purple-600'
+        },
+        {
+          title: 'System Settings',
+          description: 'Platform configuration',
+          icon: '⚙️',
+          onClick: () => navigate('/admin/settings'),
+          color: 'from-gray-500 to-gray-600'
         }
       );
       return actions;
@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
         description: 'Generate GST-compliant invoices',
         icon: '📄',
         onClick: () => navigate('/invoices/new'),
-        color: 'from-blue-500 to-blue-600'
+        color: 'from-indigo-500 to-indigo-600'
       });
     }
 
@@ -99,13 +99,12 @@ const Dashboard: React.FC = () => {
   };
 
   const getKpiData = () => {
-    if (user?.is_superuser) {
-      // Super Admin KPIs - SaaS Platform Metrics
+    if (user?.is_superuser || user?.email === 'admin@nexinvo.com') {
+      // Super Admin KPIs - Essential SaaS Metrics
       return [
-        { label: 'Total Tenants', value: '25', change: '+8%', trend: 'up', icon: '🏢' },
-        { label: 'Platform Revenue', value: '₹15,45,000', change: '+15.2%', trend: 'up', icon: '💰' },
-        { label: 'Active Users', value: '142', change: '+12%', trend: 'up', icon: '👥' },
-        { label: 'System Uptime', value: '99.9%', change: '+0.1%', trend: 'up', icon: '⚡' }
+        { label: 'Active Tenants', value: '23', change: '+3 this month', trend: 'up', icon: '🏢' },
+        { label: 'Monthly Revenue', value: '₹12,45,000', change: '+18.5%', trend: 'up', icon: '💰' },
+        { label: 'Total Users', value: '156', change: '+24 this month', trend: 'up', icon: '👥' }
       ];
     }
 
@@ -119,13 +118,13 @@ const Dashboard: React.FC = () => {
   };
 
   const getRecentActivities = () => {
-    if (user?.is_superuser) {
-      // Super Admin Activities - Platform Management
+    if (user?.is_superuser || user?.email === 'admin@nexinvo.com') {
+      // Super Admin Activities - Essential Platform Events
       return [
-        { action: 'New tenant "XYZ Corp" added', time: '5 minutes ago', type: 'tenant' },
-        { action: 'User john.doe@company.com created', time: '20 minutes ago', type: 'user' },
-        { action: 'System backup completed successfully', time: '1 hour ago', type: 'system' },
-        { action: 'Enterprise plan upgraded for ABC Firm', time: '2 hours ago', type: 'subscription' }
+        { action: 'New tenant "ABC Chartered Accountants" onboarded', time: '2 hours ago', type: 'tenant' },
+        { action: 'Monthly subscription payment received ₹25,000', time: '4 hours ago', type: 'payment' },
+        { action: 'Enterprise plan upgraded - XYZ Associates', time: '1 day ago', type: 'subscription' },
+        { action: 'Platform maintenance completed successfully', time: '2 days ago', type: 'system' }
       ];
     }
 
@@ -144,34 +143,12 @@ const Dashboard: React.FC = () => {
   return (
     <div className="p-8">
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-white/70 backdrop-blur rounded-2xl p-6 shadow-lg border border-white/50">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {user?.first_name}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                {getRoleDisplayName(user?.role)} • {new Date().toLocaleDateString('en-IN', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <div className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg">
-                <span className="text-sm font-medium">Dashboard Overview</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className={`grid gap-6 mb-8 ${
+        (user?.is_superuser || user?.email === 'admin@nexinvo.com')
+          ? 'grid-cols-1 md:grid-cols-3'
+          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+      }`}>
         {kpiData.map((kpi, index) => (
           <div key={index} className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6 hover:bg-white/90 transition-all duration-300 hover:scale-105">
             <div className="flex items-center justify-between">
@@ -184,7 +161,6 @@ const Dashboard: React.FC = () => {
                   }`}>
                     {kpi.trend === 'up' ? '↗' : '↘'} {kpi.change}
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">vs last month</span>
                 </div>
               </div>
               <div className="text-3xl opacity-70">{kpi.icon}</div>
@@ -194,113 +170,64 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        {/* Quick Actions - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getQuickActions().map((action, index) => (
-                <div
-                  key={index}
-                  className={`group relative overflow-hidden rounded-xl bg-gradient-to-r ${action.color} p-6 text-white cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
-                  onClick={action.onClick}
-                >
-                  <div className="flex items-center">
-                    <div className="text-3xl mr-4 filter drop-shadow-lg">{action.icon}</div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold">{action.title}</h3>
-                      <p className="text-sm opacity-90 mt-1">{action.description}</p>
-                    </div>
-                    <div className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity group-hover:translate-x-1 transform duration-200">
-                      →
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 rounded-xl hover:bg-blue-50/50 transition-colors">
-                  <div className={`w-3 h-3 rounded-full ${
-                    activity.type === 'invoice' ? 'bg-blue-500' :
-                    activity.type === 'client' ? 'bg-green-500' :
-                    activity.type === 'report' ? 'bg-purple-500' :
-                    activity.type === 'tenant' ? 'bg-indigo-500' :
-                    activity.type === 'user' ? 'bg-cyan-500' :
-                    activity.type === 'system' ? 'bg-gray-500' :
-                    activity.type === 'subscription' ? 'bg-yellow-500' :
-                    'bg-orange-500'
-                  } shadow-lg`}></div>
+        {/* Quick Actions */}
+        <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            {(user?.is_superuser || user?.email === 'admin@nexinvo.com') ? 'Platform Management' : 'Quick Actions'}
+          </h2>
+          <div className="grid grid-cols-1 gap-4">
+            {getQuickActions().map((action, index) => (
+              <div
+                key={index}
+                className={`group relative overflow-hidden rounded-xl bg-gradient-to-r ${action.color} p-6 text-white cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
+                onClick={action.onClick}
+              >
+                <div className="flex items-center">
+                  <div className="text-3xl mr-4 filter drop-shadow-lg">{action.icon}</div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+                    <h3 className="text-lg font-bold">{action.title}</h3>
+                    <p className="text-sm opacity-90 mt-1">{action.description}</p>
+                  </div>
+                  <div className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity group-hover:translate-x-1 transform duration-200">
+                    →
                   </div>
                 </div>
-              ))}
-            </div>
-            <button className="w-full mt-6 py-3 text-sm text-blue-600 hover:text-blue-700 font-semibold bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
-              View all activities →
-            </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right Sidebar Info */}
-        <div className="space-y-6">
-
-          {/* Quick Stats */}
-          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">This Month</span>
-                <span className="font-medium text-gray-900">47 Invoices</span>
+        {/* Recent Activity */}
+        <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            {(user?.is_superuser || user?.email === 'admin@nexinvo.com') ? 'Platform Activity' : 'Recent Activity'}
+          </h2>
+          <div className="space-y-4">
+            {recentActivities.map((activity, index) => (
+              <div key={index} className="flex items-center space-x-4 p-4 rounded-xl hover:bg-indigo-50/50 transition-colors">
+                <div className={`w-3 h-3 rounded-full ${
+                  activity.type === 'invoice' ? 'bg-indigo-500' :
+                  activity.type === 'client' ? 'bg-green-500' :
+                  activity.type === 'report' ? 'bg-purple-500' :
+                  activity.type === 'tenant' ? 'bg-indigo-500' :
+                  activity.type === 'user' ? 'bg-cyan-500' :
+                  activity.type === 'system' ? 'bg-gray-500' :
+                  activity.type === 'subscription' ? 'bg-yellow-500' :
+                  activity.type === 'payment' ? 'bg-green-600' :
+                  'bg-orange-500'
+                } shadow-lg`}></div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">{activity.action}</p>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Pending Payments</span>
-                <span className="font-medium text-orange-600">₹2,45,000</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Overdue</span>
-                <span className="font-medium text-red-600">₹45,000</span>
-              </div>
-              <div className="border-t pt-3">
-                <button className="w-full text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  View detailed analytics →
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-
-          {/* GST Compliance Status */}
-          <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur rounded-2xl border border-green-200/50 p-6 shadow-lg">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white text-sm">✓</span>
-              </div>
-              <h3 className="text-lg font-semibold text-green-800">GST Compliant</h3>
-            </div>
-            <p className="text-sm text-green-700 mb-3">
-              All your invoices are GST compliant and ready for filing.
-            </p>
-            <div className="text-xs text-green-600">
-              Last updated: {new Date().toLocaleDateString()}
-            </div>
-          </div>
-
-          {/* Performance Chart Placeholder */}
-          <div className="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-white/50 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Performance</h3>
-            <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-              <span className="text-gray-600 text-sm">Chart Coming Soon</span>
-            </div>
-          </div>
+          <button className="w-full mt-6 py-3 text-sm text-indigo-600 hover:text-indigo-700 font-semibold bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors">
+            View all activities →
+          </button>
         </div>
       </div>
     </div>
