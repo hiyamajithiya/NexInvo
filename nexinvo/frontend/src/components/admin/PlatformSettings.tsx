@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const PlatformSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'security' | 'notifications' | 'system' | 'integrations'>('general');
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
   // General Settings
   const [generalSettings, setGeneralSettings] = useState({
@@ -59,13 +61,105 @@ const PlatformSettings: React.FC = () => {
     cdn_enabled: true
   });
 
-  const handleSave = (tab: string) => {
-    console.log(`Saving ${tab} settings...`);
-    // Implement save logic here
+  const handleSave = async (tab: string) => {
+    setLoading(true);
+
+    try {
+      // Simulate API call - Replace with actual API endpoint when backend is ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Get settings based on tab
+      let settingsToSave = {};
+      let settingName = '';
+
+      switch(tab) {
+        case 'general':
+          settingsToSave = generalSettings;
+          settingName = 'General';
+          break;
+        case 'security':
+          settingsToSave = securitySettings;
+          settingName = 'Security';
+          break;
+        case 'notifications':
+          settingsToSave = notificationSettings;
+          settingName = 'Notification';
+          break;
+        case 'system':
+          settingsToSave = systemSettings;
+          settingName = 'System';
+          break;
+        case 'integrations':
+          settingsToSave = integrationSettings;
+          settingName = 'Integration';
+          break;
+      }
+
+      // Store in localStorage for now (replace with API call)
+      localStorage.setItem(`platform_${tab}_settings`, JSON.stringify(settingsToSave));
+
+      setNotification({ type: 'success', message: `${settingName} settings saved successfully!` });
+      setTimeout(() => setNotification({ type: null, message: '' }), 3000);
+    } catch (error) {
+      setNotification({ type: 'error', message: `Failed to save ${tab} settings. Please try again.` });
+      setTimeout(() => setNotification({ type: null, message: '' }), 3000);
+      console.error('Error saving settings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    // Load general settings
+    const savedGeneral = localStorage.getItem('platform_general_settings');
+    if (savedGeneral) {
+      setGeneralSettings(JSON.parse(savedGeneral));
+    }
+
+    // Load security settings
+    const savedSecurity = localStorage.getItem('platform_security_settings');
+    if (savedSecurity) {
+      setSecuritySettings(JSON.parse(savedSecurity));
+    }
+
+    // Load notification settings
+    const savedNotifications = localStorage.getItem('platform_notifications_settings');
+    if (savedNotifications) {
+      setNotificationSettings(JSON.parse(savedNotifications));
+    }
+
+    // Load system settings
+    const savedSystem = localStorage.getItem('platform_system_settings');
+    if (savedSystem) {
+      setSystemSettings(JSON.parse(savedSystem));
+    }
+
+    // Load integration settings
+    const savedIntegrations = localStorage.getItem('platform_integrations_settings');
+    if (savedIntegrations) {
+      setIntegrationSettings(JSON.parse(savedIntegrations));
+    }
+  }, []);
 
   return (
     <div className="p-6">
+      {/* Notification */}
+      {notification.type && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-500 ${
+          notification.type === 'success'
+            ? 'bg-green-500 text-white'
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center">
+            <span className="mr-2">
+              {notification.type === 'success' ? '✓' : '✗'}
+            </span>
+            <span>{notification.message}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
@@ -203,9 +297,14 @@ const PlatformSettings: React.FC = () => {
           <div className="flex justify-end">
             <button
               onClick={() => handleSave('general')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              Save General Settings
+              {loading ? 'Saving...' : 'Save General Settings'}
             </button>
           </div>
         </div>
@@ -295,9 +394,14 @@ const PlatformSettings: React.FC = () => {
           <div className="flex justify-end">
             <button
               onClick={() => handleSave('security')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              Save Security Settings
+              {loading ? 'Saving...' : 'Save Security Settings'}
             </button>
           </div>
         </div>
@@ -338,9 +442,14 @@ const PlatformSettings: React.FC = () => {
           <div className="flex justify-end">
             <button
               onClick={() => handleSave('notifications')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              Save Notification Settings
+              {loading ? 'Saving...' : 'Save Notification Settings'}
             </button>
           </div>
         </div>
@@ -414,9 +523,14 @@ const PlatformSettings: React.FC = () => {
           <div className="flex justify-end">
             <button
               onClick={() => handleSave('system')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              Save System Settings
+              {loading ? 'Saving...' : 'Save System Settings'}
             </button>
           </div>
         </div>
@@ -483,9 +597,14 @@ const PlatformSettings: React.FC = () => {
           <div className="flex justify-end">
             <button
               onClick={() => handleSave('integrations')}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
             >
-              Save Integration Settings
+              {loading ? 'Saving...' : 'Save Integration Settings'}
             </button>
           </div>
         </div>

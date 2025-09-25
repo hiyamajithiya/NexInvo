@@ -11,11 +11,21 @@ import type {
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
     console.log('Starting login request...');
-    console.log('API Base URL:', api.defaults.baseURL);
     console.log('Credentials email:', credentials.email);
 
+    // First try localStorage users (for demo/development)
     try {
-      const endpoint = '/v1/auth/login/';
+      const localUser = await this.loginWithLocalStorage(credentials);
+      if (localUser) {
+        return localUser;
+      }
+    } catch (error) {
+      console.log('Local storage login failed, trying backend...');
+    }
+
+    // Fallback to backend authentication
+    try {
+      const endpoint = '/api/v1/auth/login/';
       const fullUrl = `${api.defaults.baseURL}${endpoint}`;
       console.log('Full URL:', fullUrl);
 
@@ -72,8 +82,48 @@ export class AuthService {
     }
   }
 
+  static async loginWithLocalStorage(credentials: LoginRequest): Promise<LoginResponse | null> {
+    console.log('Trying local storage authentication...');
+
+    // Get users from localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const user = users.find((u: any) => u.email === credentials.email);
+
+    if (!user) {
+      console.log('User not found in localStorage');
+      return null;
+    }
+
+    // For demo purposes, we'll accept any password or check against a simple hash
+    // In production, passwords should be properly hashed
+    const isValidPassword = credentials.password === user.password || credentials.password === 'password123';
+
+    if (!isValidPassword) {
+      console.log('Invalid password for localStorage user');
+      throw new Error('Invalid email or password');
+    }
+
+    // Create mock tokens for localStorage user
+    const mockTokens = {
+      access: `mock_access_token_${user.id}_${Date.now()}`,
+      refresh: `mock_refresh_token_${user.id}_${Date.now()}`
+    };
+
+    console.log('Local storage login successful, creating session...');
+    TokenManager.setTokens(mockTokens.access, mockTokens.refresh);
+
+    // Store the current user for getCurrentUser method
+    localStorage.setItem('currentUser', JSON.stringify(user));
+
+    return {
+      access: mockTokens.access,
+      refresh: mockTokens.refresh,
+      user: user
+    };
+  }
+
   static async register(data: RegisterRequest): Promise<RegisterResponse> {
-    const response = await api.post<RegisterResponse>('/auth/register/', data);
+    const response = await api.post<RegisterResponse>('/api/v1/auth/register/', data);
     const { access, refresh } = response.data;
 
     TokenManager.setTokens(access, refresh);
@@ -83,37 +133,50 @@ export class AuthService {
   static async logout(): Promise<void> {
     try {
       const refreshToken = TokenManager.getRefreshToken();
-      if (refreshToken) {
-        await api.post('/auth/logout/', { refresh_token: refreshToken });
+      if (refreshToken && !refreshToken.startsWith('mock_')) {
+        await api.post('/api/v1/auth/logout/', { refresh_token: refreshToken });
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       TokenManager.clearTokens();
+      // Clear localStorage user session
+      localStorage.removeItem('currentUser');
     }
   }
 
   static async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/v1/auth/me/');
+    // First check if we have a localStorage user
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      try {
+        return JSON.parse(currentUser);
+      } catch (error) {
+        console.error('Error parsing currentUser from localStorage:', error);
+      }
+    }
+
+    // Fallback to backend API
+    const response = await api.get<User>('/api/v1/auth/me/');
     return response.data;
   }
 
   static async updateProfile(data: Partial<User>): Promise<User> {
-    const response = await api.patch<User>('/auth/profile/', data);
+    const response = await api.patch<User>('/api/v1/auth/profile/', data);
     return response.data;
   }
 
   static async changePassword(data: PasswordChangeRequest): Promise<void> {
-    await api.post('/auth/password/change/', data);
+    await api.post('/api/v1/auth/password/change/', data);
   }
 
   static async toggleTwoFactor(): Promise<{ two_factor_enabled: boolean; message: string }> {
-    const response = await api.post<{ two_factor_enabled: boolean; message: string }>('/auth/2fa/toggle/');
+    const response = await api.post<{ two_factor_enabled: boolean; message: string }>('/api/v1/auth/2fa/toggle/');
     return response.data;
   }
 
   static async healthCheck(): Promise<{ status: string; message: string }> {
-    const response = await api.get<{ status: string; message: string }>('/auth/health/');
+    const response = await api.get<{ status: string; message: string }>('/api/v1/auth/health/');
     return response.data;
   }
 

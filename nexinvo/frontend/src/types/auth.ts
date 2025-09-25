@@ -5,13 +5,11 @@ export interface User {
   last_name: string;
   phone?: string;
   designation?: string;
-  ca_registration_no?: string;
-  is_ca_user: boolean;
   is_superuser: boolean;
   two_factor_enabled: boolean;
   date_joined: string;
   last_login?: string;
-  role?: 'ca_owner' | 'admin' | 'finance_user' | 'viewer' | 'client_readonly';
+  role?: 'owner' | 'admin' | 'manager' | 'finance_user' | 'viewer' | 'client_readonly';
   permissions?: string[];
 }
 
@@ -34,7 +32,6 @@ export interface RegisterRequest {
   last_name: string;
   phone?: string;
   designation?: string;
-  ca_registration_no?: string;
 }
 
 export interface RegisterResponse {

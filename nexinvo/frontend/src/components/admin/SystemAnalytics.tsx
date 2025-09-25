@@ -3,6 +3,71 @@ import React, { useState } from 'react';
 const SystemAnalytics: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
 
+  const handleExportReport = () => {
+    // Prepare data for export
+    const exportData = {
+      generatedAt: new Date().toISOString(),
+      timeRange: timeRange,
+      kpis: kpiData,
+      systemUsage: usageStats,
+      topTenants: topTenants,
+      recentActivity: recentActivity
+    };
+
+    // Convert to CSV format
+    const csvContent = generateCSV(exportData);
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `system_analytics_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generateCSV = (data: any) => {
+    let csv = 'System Analytics Report\n';
+    csv += `Generated: ${new Date().toLocaleString()}\n`;
+    csv += `Time Range: ${timeRange === '24h' ? 'Last 24 Hours' : timeRange === '7d' ? 'Last 7 Days' : timeRange === '30d' ? 'Last 30 Days' : 'Last 90 Days'}\n\n`;
+
+    // KPIs
+    csv += 'Key Performance Indicators\n';
+    csv += 'Metric,Value,Change,Trend\n';
+    data.kpis.forEach((kpi: any) => {
+      csv += `"${kpi.label}","${kpi.value}","${kpi.change}","${kpi.trend}"\n`;
+    });
+    csv += '\n';
+
+    // System Usage
+    csv += 'System Usage\n';
+    csv += 'Metric,Current,Limit,Percentage\n';
+    data.systemUsage.forEach((stat: any) => {
+      csv += `"${stat.metric}","${stat.current}","${stat.limit}",${stat.percentage}%\n`;
+    });
+    csv += '\n';
+
+    // Top Tenants
+    csv += 'Top Revenue Tenants\n';
+    csv += 'Name,Revenue,Users,Plan\n';
+    data.topTenants.forEach((tenant: any) => {
+      csv += `"${tenant.name}","${tenant.revenue}",${tenant.users},"${tenant.plan}"\n`;
+    });
+    csv += '\n';
+
+    // Recent Activity
+    csv += 'Recent Platform Activity\n';
+    csv += 'Action,Time,Type\n';
+    data.recentActivity.forEach((activity: any) => {
+      csv += `"${activity.action}","${activity.time}","${activity.type}"\n`;
+    });
+
+    return csv;
+  };
+
   // Mock data - replace with actual API calls
   const kpiData = [
     { label: 'Total Revenue', value: '₹45,67,890', change: '+18.5%', trend: 'up', icon: '💰' },
@@ -54,7 +119,10 @@ const SystemAnalytics: React.FC = () => {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
             </select>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+            <button
+              onClick={handleExportReport}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
               Export Report
             </button>
           </div>

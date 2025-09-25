@@ -83,7 +83,7 @@ const InvoiceForm: React.FC = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await apiClient.get('/api/v1/invoices/clients/');
+      const response = await apiClient.get('/api/v1/tenants/clients/');
       setClients(response.data.results || []);
     } catch (error) {
       console.error('Error fetching clients:', error);

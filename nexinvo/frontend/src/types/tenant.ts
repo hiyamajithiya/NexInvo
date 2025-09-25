@@ -1,12 +1,30 @@
+export type BusinessType =
+  | 'professional'
+  | 'trader'
+  | 'manufacturer'
+  | 'contractor'
+  | 'epc_contractor'
+  | 'manpower_supplier'
+  | 'software_it'
+  | 'transport_logistics'
+  | 'real_estate'
+  | 'retail'
+  | 'hospitality'
+  | 'healthcare'
+  | 'education'
+  | 'agriculture'
+  | 'other';
+
 export interface Tenant {
   id: string;
   name: string;
-  business_type: 'ca_firm' | 'sme' | 'enterprise';
+  business_type: BusinessType;
   aato_threshold: number;
   e_invoice_enabled: boolean;
   b2c_qr_enabled: boolean;
   company_details: Record<string, any>;
   gst_settings: Record<string, any>;
+  business_config?: Record<string, any>;
   subscription_plan: 'free' | 'basic' | 'professional' | 'enterprise';
   billing_details: Record<string, any>;
   created_at: string;
@@ -19,7 +37,7 @@ export interface TenantMembership {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: 'ca_owner' | 'admin' | 'finance_user' | 'viewer' | 'client_readonly';
+  role: 'owner' | 'admin' | 'manager' | 'finance_user' | 'viewer' | 'client_readonly';
   permissions: Record<string, any>;
   joined_at: string;
   invited_by?: string;
@@ -40,13 +58,14 @@ export interface TenantMembership {
 
 export interface CreateTenantRequest {
   name: string;
-  business_type: 'ca_firm' | 'sme' | 'enterprise';
+  business_type: BusinessType;
   subscription_plan: 'free' | 'basic' | 'professional' | 'enterprise';
   aato_threshold?: number;
   e_invoice_enabled?: boolean;
   b2c_qr_enabled?: boolean;
   company_details?: Record<string, any>;
   gst_settings?: Record<string, any>;
+  business_config?: Record<string, any>;
   billing_details?: Record<string, any>;
 }
 
@@ -57,10 +76,8 @@ export interface CreateUserRequest {
   password: string;
   phone?: string;
   designation?: string;
-  ca_registration_no?: string;
-  is_ca_user?: boolean;
   tenant_id?: string;
-  role?: 'ca_owner' | 'admin' | 'finance_user' | 'viewer' | 'client_readonly';
+  role?: 'owner' | 'admin' | 'manager' | 'finance_user' | 'viewer' | 'client_readonly';
 }
 
 export interface TenantStats {
